@@ -1,6 +1,9 @@
-// Hunt the Wumpus! ( https:://en.wikipedia.org/Hunt_the_Wumpus )
+// Hunt the Wumpus! ( https://en.wikipedia.org/Hunt_the_Wumpus )
 // My implementation in C++, according to description at wikipedia article.
 // No external libraries needed. Code is public domain.
+
+// Refined from some suggesteions at https://www.cplusplus.com/forum/general/280996/
+// Thank you all :-)
 
 #include <iostream>
 #include <string>
@@ -8,11 +11,11 @@
 #include <ctime>
 #include <cstdlib>
 
-const int CAVE_SIZE = 20;    // Count of rooms in the cave.
-const int NO_OF_PITS = 2;    // Number of pits.
-const int NO_OF_BATS = 2;    // Number of bats.
-const int NO_OF_ARROWS = 5;  // Number of arrows.
-const int EDGES = 3;         // Number of edges of each node.
+constexpr int CAVE_SIZE = 20;    // Count of rooms in the cave.
+constexpr int NO_OF_PITS = 2;    // Number of pits.
+constexpr int NO_OF_BATS = 2;    // Number of bats.
+constexpr int NO_OF_ARROWS = 5;  // Number of arrows.
+constexpr int EDGES = 3;         // Number of edges (doors) of each node (room).
 
 
 // This is the graphical correlation of its edges of each room of the cave.
@@ -20,7 +23,7 @@ const int EDGES = 3;         // Number of edges of each node.
 // There are 'CAVE_SIZE' rooms, each of them has 'EDGES' nighbour rooms.
 // All in all must the length of the array be of 'CAVE_SIZE'.
 // The graph below represents a dodecahedron.
-const int CONNECTIONS[CAVE_SIZE][EDGES] =
+constexpr int CONNECTIONS[CAVE_SIZE][EDGES] =
   { { 13, 16, 19 },
     {  2,  8,  5 },
     {  1,  3, 10 },
@@ -46,11 +49,9 @@ const int CONNECTIONS[CAVE_SIZE][EDGES] =
 enum Content { EMPTY, WUMPUS, BAT, PIT };
 
 std::ostream & operator<<( std::ostream & os, const Content c ) {
-    if( c == EMPTY ) return os << "EMPTY";
-    if( c == WUMPUS ) return os << "WUMPUS";
-    if( c == BAT ) return os << "BAT";
-    if( c == PIT ) return os << "PIT";
-    return os;
+    // Thank you @seeplus for the idea using a lookup array.
+    constexpr const char * const lookup[] = { "EMPTY", "WUMPUS", "BAT", "PIT" };
+    return os << lookup[c];
 }
 
 
@@ -65,14 +66,12 @@ struct Cave
     };
 
     Room * rooms;
-    Room * wumpus_room;
+    Room * wumpus_room;  // Here resides the Wumpus.
 
-    Cave()
+    Cave() : rooms{new Room[CAVE_SIZE]} // thanks @seeplus
     {
-        rooms = new Room[CAVE_SIZE];
-
         // Connecting the rooms.
-        for( int r = 0; r < CAVE_SIZE; ++ r ) {
+        for( int r {}; r < CAVE_SIZE; ++ r ) {
             rooms[r].room_no = r + 1;
             for( int e = 0; e < EDGES; ++ e) {
                 rooms[r].pr[e] = & rooms[ CONNECTIONS[r][e] ];
@@ -81,8 +80,9 @@ struct Cave
 
         // Populating the cave.
         while( true ) {
-           int i = std::rand() % CAVE_SIZE;
-           if( rooms[i].content == EMPTY ) {
+            // Thank you @seeplus for the hint that if-statements at C++17 could define its
+            // own variable in its header.
+            if( const auto i {std::rand() % CAVE_SIZE}; rooms[i].content == EMPTY ) {
                rooms[i].content = WUMPUS;
                wumpus_room = & rooms[i];
                break;
@@ -90,8 +90,7 @@ struct Cave
         }
         for( int count = 0; count < NO_OF_PITS; ++ count ) {
             while( true ) {
-                int i = std::rand() % CAVE_SIZE;
-                if( rooms[i].content == EMPTY ) {
+                if( const auto i {std::rand() % CAVE_SIZE}; rooms[i].content == EMPTY ) {
                     rooms[i].content = PIT;
                     break;
                 }
@@ -99,8 +98,7 @@ struct Cave
         }
         for( int count = 0; count < NO_OF_BATS; ++ count ) {
             while( true ) {
-                int i = std::rand() % CAVE_SIZE;
-                if( rooms[i].content == EMPTY ) {
+                if( const auto i {std::rand() % CAVE_SIZE}; rooms[i].content == EMPTY ) {
                     rooms[i].content = BAT;
                     break;
                 }
@@ -112,8 +110,9 @@ struct Cave
 };
 
 std::ostream & operator<<( std::ostream & os, const Cave & cave ){
-    std::cerr << "room_no\tpr[0]\tpr[1]\tpr[2]\tcontent\n"
-                 "_______________________________________\n";
+
+    os << "room_no\tpr[0]\tpr[1]\tpr[2]\tcontent\n"
+          "_______________________________________\n";
     for( int i = 0; i < CAVE_SIZE; ++ i ) {
         os << cave.rooms[i].room_no;
         for( int k = 0; k < EDGES; ++ k ) {
@@ -130,8 +129,8 @@ class Game
 private:
 
     Cave cave;
-    Cave::Room * room;
-    Cave::Room * wumpus_room;
+    Cave::Room * room;          // Here resides the player.
+    Cave::Room * wumpus_room;   // Here resides the Wumpus.
     int arrows;
     bool does_game_run;
     std::ostream & os;
@@ -176,12 +175,14 @@ private:
        for( int i = 0; i < EDGES; ++ i )
            if( room->pr[i]->content == PIT )
                os << "I feel a light cold drought in the air.\n"
-                  << " Maybe there is a pit somewhere\n";
+                  << " Maybe there is a pit somewhere.\n";
         os << "\n";
 
     }
 
     // Handling arrow shooting.
+    // TODO: The code so far is hard to understand. Maybe using of 'a[]' is
+    // a bad design idea. I'm dissatified with that.
     void process_shoot() {
         int len = 0;
         for( int i = 0; i < 5; ++ i ) {
@@ -206,7 +207,7 @@ private:
             if( rand_flag ) {
                 if( msg_flag ) {
                     os << "You coose the wrong path for your arrow.\n"
-                       << "Your arrow flys instead through room ";
+                       << "Your arrow fly instead through room ";
                     msg_flag = false;
                 }
                 tmp = tmp->pr[ std::rand() % EDGES ];
@@ -223,7 +224,7 @@ private:
                     }
                 }
             }
-            os << tmp->room_no;
+            os << tmp->room_no << ' ';
             if( tmp->content == WUMPUS ) wumpus_kill = true;
             if( tmp->room_no == room->room_no ) self_kill = true;
         }
@@ -255,6 +256,7 @@ private:
        }
     }
 
+    // TODO: I'm dissatisfied with using 'a[]' as moving and shooting temporary storage.
     void handle_input() {
        while( true ) {
            os << "Move or shoot (m-s)? ";
@@ -288,6 +290,7 @@ private:
                        return;
                    }
                }
+               os << "Whoops! You just tried to walk through solid rock :-)\n";
                continue;
            }
 
@@ -337,13 +340,12 @@ private:
         else if( room->content == BAT ) {
             room->content = EMPTY;
             while( true ) {
-                int idx = rand() % CAVE_SIZE;
-                if( cave.rooms[idx].content == EMPTY ) {
+                if( auto const idx {rand() % CAVE_SIZE}; cave.rooms[idx].content == EMPTY ) {
                     room = & cave.rooms[idx];
                     os << "A huge bat takes you away and flys with you through the cave.\n";
                     while( true ) {
                         int idx = rand() % CAVE_SIZE;
-                        if( cave.rooms[idx].content == EMPTY ) {
+                        if( const auto idx{rand() % CAVE_SIZE}; cave.rooms[idx].content == EMPTY ) {
                             cave.rooms[idx].content = BAT;
                             return;
                         }
@@ -371,8 +373,7 @@ public:
     {
         // Get randomly a empty room for the player.
         while( true ) {
-            int i = rand() % CAVE_SIZE;
-            if( cave.rooms[i].content == EMPTY ) {
+            if( const auto i{rand() % CAVE_SIZE}; cave.rooms[i].content == EMPTY ) {
                 room = & cave.rooms[i];
                 break;
             }
