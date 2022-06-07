@@ -128,14 +128,6 @@ class Game
 
 private:
 
-    Cave cave;
-    Cave::Room * room;          // Here resides the player.
-    Cave::Room * wumpus_room;   // Here resides the Wumpus.
-    int arrows;
-    bool does_game_run;
-    std::ostream & os;
-    std::istream & is;
-    int a[5] = {0};  // Room numbers of which could an arrow fly.
 
     void print_help() {
         os << "\nHint: you need to enter either 'm', followed by a number\n"
@@ -344,7 +336,6 @@ private:
                     room = & cave.rooms[idx];
                     os << "A huge bat takes you away and flys with you through the cave.\n";
                     while( true ) {
-                        int idx = rand() % CAVE_SIZE;
                         if( const auto idx{rand() % CAVE_SIZE}; cave.rooms[idx].content == EMPTY ) {
                             cave.rooms[idx].content = BAT;
                             return;
@@ -364,12 +355,21 @@ private:
         // Clearing the arrow array.
         for( int i = 0; i < 5; ++ i ) a[i] = 0;
     }
+    
+    int arrows;
+    bool does_game_run;
+    std::ostream & os;
+    std::istream & is;
+    Cave cave;
+    Cave::Room * room;          // Here resides the player.
+    Cave::Room * wumpus_room;   // Here resides the Wumpus.
+    int a[5] = {0};  // Room numbers of which could an arrow fly.
 
 public:
 
     Game()
-    : arrows{NO_OF_ARROWS}, does_game_run{true}, os{ std::cout }, is{ std::cin }
-    , wumpus_room{ cave.wumpus_room }
+    : arrows{NO_OF_ARROWS}, does_game_run{true}, os{std::cout}, is{std::cin}
+    , wumpus_room{cave.wumpus_room}
     {
         // Get randomly a empty room for the player.
         while( true ) {
