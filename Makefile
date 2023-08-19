@@ -1,10 +1,8 @@
-CXXFLAGS := -Wall -std=c++17
+wumpus:
+	mkdir build && cd build && cmake .. && make
 
-wumpus: main.o
-	${CXX} ${LDFLAGS} -o wumpus main.o
-
-main.o: main.cpp
-	${CXX} ${CXXFLAGS} -c main.cpp
+.PHONY:
+	clean
 
 clean:
-	rm -rf wumpus *.o
+	rm -rf ./build
