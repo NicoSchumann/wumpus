@@ -363,7 +363,8 @@ private:
     Cave cave;
     Cave::Room * room;          // Here resides the player.
     Cave::Room * wumpus_room;   // Here resides the Wumpus.
-    int a[5] = {0};  // Room numbers of which could an arrow fly.
+    int a[5] = {0};  // Room numbers of whose could an arrow fly.
+
 
 public:
 
@@ -371,7 +372,7 @@ public:
     : arrows{NO_OF_ARROWS}, does_game_run{true}, os{std::cout}, is{std::cin}
     , wumpus_room{cave.wumpus_room}
     {
-        // Get randomly a empty room for the player.
+        // Get randomly an empty room for the player.
         while( true ) {
             if( const auto i{rand() % CAVE_SIZE}; cave.rooms[i].content == EMPTY ) {
                 room = & cave.rooms[i];
