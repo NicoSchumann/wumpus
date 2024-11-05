@@ -12,38 +12,41 @@
 #include <cstdlib>
 
 constexpr int CAVE_SIZE = 20;       // Count of rooms inside the cave.
-constexpr int NO_OF_PITS = 2;       // Number of pits.
-constexpr int NO_OF_BATS = 2;       // Number of bats.
-constexpr int NO_OF_ARROWS = 5;     // Number of arrows.
+constexpr int NO_OF_PITS = 2;       // Number of total pits.
+constexpr int NO_OF_BATS = 2;       // Number of total bats.
+constexpr int NO_OF_ARROWS = 5;     // Number of arrows that player owns.
 constexpr int EDGES = 3;            // Number of edges (doors) of each node (room).
-constexpr int ARROW_TRAVERSALS = 4; // Number of caves which may be traversed by an arrow.
+constexpr int ARROW_TRAVERSALS = 4; // Number of rooms which may be traversed by an arrow.
 
 // This is the graphical correlation of its edges of each room of the cave.
 // The numbers of a row represent the connected rooms of a room.
 // There are 'CAVE_SIZE' rooms, each of them has 'EDGES' nighbour rooms.
 // All in all must the length of the array be of 'CAVE_SIZE'.
 // The graph below represents a dodecahedron.
+//
 constexpr int CONNECTIONS[CAVE_SIZE][EDGES] =
-    {{13, 16, 19},
-     {2, 8, 5},
-     {1, 3, 10},
-     {2, 4, 12},
-     {3, 5, 14},
-     {1, 4, 6},
-     {5, 7, 15},
-     {6, 8, 17},
-     {1, 7, 9},
-     {8, 10, 18},
-     {2, 9, 11},
-     {10, 12, 19},
-     {3, 11, 13},
-     {12, 14, 0},
-     {4, 13, 15},
-     {6, 14, 16},
-     {15, 17, 0},
-     {7, 16, 18},
-     {9, 17, 19},
-     {11, 18, 0}};
+    {
+        {13, 16, 19},
+        {2, 8, 5},
+        {1, 3, 10},
+        {2, 4, 12},
+        {3, 5, 14},
+        {1, 4, 6},
+        {5, 7, 15},
+        {6, 8, 17},
+        {1, 7, 9},
+        {8, 10, 18},
+        {2, 9, 11},
+        {10, 12, 19},
+        {3, 11, 13},
+        {12, 14, 0},
+        {4, 13, 15},
+        {6, 14, 16},
+        {15, 17, 0},
+        {7, 16, 18},
+        {9, 17, 19},
+        {11, 18, 0}
+    };
 
 // This content could be inside a room.
 enum Content
@@ -56,7 +59,7 @@ enum Content
 
 std::ostream &operator<<(std::ostream &os, const Content c)
 {
-    // Thank you @seeplus for the idea using a lookup array.
+    // Thank you @seeplus for your idea using a lookup array.
     constexpr const char *const lookup[] = {"EMPTY", "WUMPUS", "BAT", "PIT"};
     return os << lookup[c];
 }
@@ -148,6 +151,7 @@ class Game
 {
 
 private:
+
     enum class Commando
     {
         NONE,
@@ -320,7 +324,7 @@ private:
         }
     }
 
-    // Moving player.
+    // Moves the player.
     void process_move()
     {
         for (int i = 0; i < EDGES; ++i)
@@ -335,7 +339,7 @@ private:
         return;
     }
 
-    // Handling arrow shooting.
+    // Handles arrow shooting.
     void process_shoot()
     {
         --arrows;
