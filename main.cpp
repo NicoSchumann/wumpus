@@ -15,8 +15,13 @@ constexpr int CAVE_SIZE = 20;       // Count of rooms inside the cave.
 constexpr int NO_OF_PITS = 2;       // Number of total pits.
 constexpr int NO_OF_BATS = 2;       // Number of total bats.
 constexpr int NO_OF_ARROWS = 5;     // Number of arrows that player owns.
-constexpr int EDGES = 3;            // Number of edges (doors) of each node (room).
 constexpr int ARROW_TRAVERSALS = 4; // Number of rooms which may be traversed by an arrow.
+
+constexpr int IS_DEAD = -1;       // This could be used for setting player or wumpus to dead state,
+                                  // should be a negative value.
+constexpr int INVALID_SHOOT = -1; // For shoot handling, should be a negative value.
+
+constexpr int EDGES = 3; // Number of edges (doors) of each node (room).
 
 // This is the graphical correlation of its edges of each room of the cave.
 // The numbers of a row represent the connected rooms of a room.
@@ -24,7 +29,7 @@ constexpr int ARROW_TRAVERSALS = 4; // Number of rooms which may be traversed by
 // All in all must the length of the array be of 'CAVE_SIZE'.
 // The graph below represents a dodecahedron.
 //
-constexpr int CONNECTIONS[CAVE_SIZE][EDGES] =
+constexpr int CAVE[CAVE_SIZE][EDGES] =
     {
         {13, 16, 19},
         {2, 8, 5},
@@ -52,101 +57,22 @@ constexpr int CONNECTIONS[CAVE_SIZE][EDGES] =
 enum Content
 {
     EMPTY,
-    WUMPUS,
     BAT,
     PIT
 };
 
-std::ostream &operator<<(std::ostream &os, const Content c)
+
+/// @brief Prints  'Content' enum.
+///
+std::ostream &operator<<(std::ostream &os, const Content content)
 {
     // Thank you @seeplus for your idea using a lookup array.
-    constexpr const char *const lookup[] = {"EMPTY", "WUMPUS", "BAT", "PIT"};
-    return os << lookup[c];
+    constexpr const char *const lookup[] = {"EMPTY", "BAT", "PIT"};
+    return os << lookup[content];
 }
 
-// A cave is structured as a graph, with rooms as nodes and doors at edges.
-struct Cave
-{
-    struct Room
-    {
-        Room *neighbors[EDGES]; // Connections to other rooms.
-        int room_no;
-        Content content;
-    };
-
-    Room rooms[CAVE_SIZE];
-    Room *wumpus_room; // Here resides the Wumpus.
-
-    Cave()
-    {
-        // Connecting the rooms.
-        for (int r = 0; r < CAVE_SIZE; ++r)
-        {
-            rooms[r].room_no = r + 1;
-            for (int e = 0; e < EDGES; ++e)
-            {
-                rooms[r].neighbors[e] = &rooms[CONNECTIONS[r][e]];
-            }
-        }
-
-        // Populating the cave.
-        while (true)
-        {
-            // Thank you @seeplus for the hint that if-statements at C++17 could define its
-            // own variable in its header.
-            if (const auto i{std::rand() % CAVE_SIZE}; rooms[i].content == EMPTY)
-            {
-                rooms[i].content = WUMPUS;
-                wumpus_room = &rooms[i];
-                break;
-            }
-        }
-        for (int count = 0; count < NO_OF_PITS; ++count)
-        {
-            while (true)
-            {
-                if (const auto i{std::rand() % CAVE_SIZE}; rooms[i].content == EMPTY)
-                {
-                    rooms[i].content = PIT;
-                    break;
-                }
-            }
-        }
-        for (int count = 0; count < NO_OF_BATS; ++count)
-        {
-            while (true)
-            {
-                if (const auto i{std::rand() % CAVE_SIZE}; rooms[i].content == EMPTY)
-                {
-                    rooms[i].content = BAT;
-                    break;
-                }
-            }
-        }
-    }
-
-    ~Cave()
-    { /* Nothing to do. */
-    }
-};
-
-std::ostream &operator<<(std::ostream &os, const Cave &cave)
-{
-
-    os << "room_no\tpr[0]\tpr[1]\tpr[2]\tcontent\n"
-          "_______________________________________\n";
-    for (int i = 0; i < CAVE_SIZE; ++i)
-    {
-        os << cave.rooms[i].room_no;
-        for (int k = 0; k < EDGES; ++k)
-        {
-            os << '\t' << cave.rooms[i].neighbors[k]->room_no;
-        }
-        os << '\t' << cave.rooms[i].content << '\n';
-    }
-    return os << '\n';
-}
-
+/// @brief The guts of the game.
+///
 class Game
 {
 
@@ -159,114 +85,131 @@ private:
         SHOOT
     };
 
+
     void print_help()
     {
-        os << "\nHint: you need to enter either 'm', followed by a number\n"
-              "of the connected rooms, or 's', followed by 1 up to 5 room numbers\n"
+        _os << "\nHint: you need to enter either 'm[ove]', followed by a number\n"
+              "of the connected rooms, or 's[hoot]', followed by 1 up to 5 room numbers\n"
               "of consecutive connected rooms. If the entered arrow path is faulty,\n"
               "the arrow fly a random path through the cave.\n"
               "Examples:\n"
               " 'm 4 <Enter>' let you move into room 4 (if possible).\n"
-              " 's 3 8 7 <Enter>' tries to shoot through rooms 3, 8 and 7.\n\n";
+              " 's 3 8 7 <Enter>' tries to shoot through rooms 3, 8 and 7.\n"
+              "h[elp] prints this help\n"
+            << std::endl;
     }
-    void intro()
+
+
+    /// @brief An intro which will printed at game start.
+    ///
+    void print_intro()
     {
-        os << "\nYou are an adventurer inside a cave. It's pretty dark.\n"
+        _os << "\nYou are an adventurer inside a cave. It's pretty dark.\n"
            << "All you have, is your courage and a bow,"
            << " together with " << NO_OF_ARROWS
-           << " arrow" << (NO_OF_ARROWS > 1 ? "s" : "") << " in your quiver.";
+           << " arrow" << (NO_OF_ARROWS > 1 ? "s" : "") << " in your quiver."
+           << std::endl;
     }
+
+
+    /// @brief Printed at end of game.
+    ///
     void bye()
     {
-        os << "\nbye...\n";
+        _os << "\nbye..." << std::endl;
     }
+
+
+    /// @brief Prints game state for orientation of the player.
+    ///
     void print_status()
     {
-        os << "\n\nYou are now in room " << player_room->room_no << ".\n"
-           << "There are tunnels, leading to rooms ";
+        _os << "There are tunnels, leading to rooms ";
         for (int i = 0; i < EDGES; ++i)
         {
-            os << (EDGES > 1 && i == EDGES - 1 ? "and " : "")
-               << player_room->neighbors[i]->room_no << (i < EDGES - 2 ? "," : "") << (i == EDGES - 1 ? "" : " ");
-        }
-        os << ".\nYou have " << arrows << " arrow" << (arrows == 1 ? "" : "s")
-           << " in your quiver.\n";
+            _os << (EDGES > 1 && i == EDGES - 1 ? "and " : "")
+               << CAVE[_player_room_no][i]
+               << (i < EDGES - 2 ? "," : "") 
+               << (i == EDGES - 1 ? "" : " ") 
+               << "\n";
 
-        for (int i = 0; i < EDGES; ++i)
-            if (player_room->neighbors[i]->content == WUMPUS)
-                os << "It smells somewhat. Maybe a wumpus is near.\n";
-        for (int i = 0; i < EDGES; ++i)
-            if (player_room->neighbors[i]->content == BAT)
-                os << "I hear a light rustle in the air.\n"
-                   << " Maybe there are bats near.\n";
-        for (int i = 0; i < EDGES; ++i)
-            if (player_room->neighbors[i]->content == PIT)
-                os << "I feel a light cold drought in the air.\n"
-                   << " Maybe there is a pit somewhere.\n";
-        os << "\n";
+            switch (CAVE[_player_room_no][i])
+            {
+                case BAT:
+                   _os << "I hear a light rustle in the air.\n"
+                      " Maybe there are bats near.\n";
+                   continue;
+                case PIT:
+                    _os << "I feel a light cold drought in the air.\n"
+                         " Maybe there is a pit somewhere.\n";
+                    continue;
+            }
+            if (CAVE[_player_room_no][i] == _wumpus_room_no)
+            {
+                _os << "It smells terrible. Maybe the wumpus is near.\n";
+            }
+        }
+        if (_arrows)
+        {
+            _os << ".\nYou have " << _arrows << " arrow" << (_arrows == 1 ? "" : "s")
+               << " in your quiver.\n";
+        }
+            
+        _os << "\n";
     }
 
-    // Handling user input.
+
+    /// @brief Handles user input.
+    ///
     void handle_input()
     {
         while (true)
         {
-            player_commando = Commando::NONE;
+            std::string input_line; // Holds chunks of input
+            std::getline(_is, input_line);
+            std::size_t next_digit_pos {};
+            _player_commando = Commando::NONE;
 
-            os << "Move or shoot (m-s)? ";
-            std::string input;
-            std::getline(is, input);
-            if (input[0] == 'q')
+            _os << "Move or shoot (m-s)? ";
+
+            if (input_line[0] == 'q')
             {
-                does_game_run = false;
+                _does_game_run = false;
                 return;
             }
-            if (!is)
-                continue;
-
-            std::istringstream iss(input);
-            char ch;
-            iss >> ch;
-
-            if (ch != 's' && ch != 'm')
+            if (input_line[0] == 'h' || (input_line[0] != 'm' && input_line[0] != 'm'))
             {
-                print_help();
-                print_status();
+                print_help;
                 continue;
             }
 
-            // Handling the 'move' directive.
-            if (ch == 'm')
+            // Handles the 'move' directive.
+            if (input_line[0] == 'm')
             {
-                iss >> room_to_move;
-                if (!iss)
-                    continue;
-
-                player_commando = Commando::MOVE;
-
+                // position of the next number iside input_line
+                for (next_digit_pos = 1; !std::isdigit(input_line[next_digit_pos]) 
+                && next_digit_pos < input_line.size(); ++next_digit_pos)
+                    ;
+            
+                _room_to_move = std::stoi(input_line.substr(next_digit_pos));
+                _player_commando = Commando::MOVE;
                 return;
             }
 
-            // Handling the 'shoot' directive.
-            else if (ch == 's')
+            // Handles the 'shoot' directive.
+            else if (input_line[0] == 's')
             {
-                if (arrows <= 0)
-                {
-                    os << "You have no arrows in your quiver!\n";
-                    continue;
-                }
+                _player_commando = Commando::SHOOT;
 
-                player_commando = Commando::SHOOT;
-
-                // Setting 'pos' to 1st digit.
-                std::size_t pos;
-                for (pos = 0; !isdigit(input[pos]); ++pos)
+                // position to the next number inside input_line
+                for (next_digit_pos = 1; !isdigit(input_line[next_digit_pos])
+                 && next_digit_pos < input_line.size(); ++next_digit_pos)
                     ;
 
-                // Clearing array of arrow traversal rooms.
+                // clear array of arrow traversal rooms.
                 for (int i = 0; i < ARROW_TRAVERSALS; ++i)
                 {
-                    arrow_traversal_list[i] = 0;
+                    _arrow_traversal_list[i] = -1;
                 }
 
                 // Setting array of arrow traversal rooms.
@@ -276,11 +219,11 @@ private:
                     for (int i = 0; i < ARROW_TRAVERSALS; ++i)
                     {
                         std::size_t processed = 0;
-                        arrow_traversal_list[i] = std::stoi(input.substr(pos), &processed);
-                        pos += processed;
+                        _arrow_traversal_list[i] = std::stoi(input_line.substr(next_digit_pos), &processed);
+                        next_digit_pos += processed;
                     }
                 }
-                catch (...)
+                catch (...)  // Error at reading in the numbers.
                 {
                 }
                 break;
@@ -288,204 +231,225 @@ private:
             else
                 continue; // Wrong command happend.
         }
+    }
 
-        // Trimming the arrow traversal list;
+
+    /// @brief Trims the arrow traversal list.
+    ///
+    void trim_arrow_traversal_list()
+    {
+
+        // The main question is:
+        // The User had provided a list of requested target-rooms whose the arrow shall conquer.
+        // Now we must check whether all requested rooms are valid shoot targets.
+        // This means, all the requested rooms, next to player's possition, must represent a linked list.
+        //
+        int arrow_room_no = _player_room_no; // At start, the arrow is in player's room.
+        int width;                           // Depth of fled of the arrow.
+        bool room_match_flag{false};         // Matches the room of shoot request with a valid room?
+
+        for (width = 0; width < ARROW_TRAVERSALS; ++width)
         {
-            bool mismatch_flag{false};
-            Cave::Room *tmp = player_room;
-            int i = 0;
-            for (; i < ARROW_TRAVERSALS; ++i)
+            for (int edge = 0; edge < EDGES; ++edge)
             {
-
-                if (arrow_traversal_list[i] == 0)
-                    break;
-
-                mismatch_flag = true;
-
-                for (int e = 0; e < EDGES; ++e)
+                // Shoot target matches with room no.
+                if (_arrow_traversal_list[width] == CAVE[arrow_room_no][edge])
                 {
-                    if (tmp->neighbors[e]->room_no == arrow_traversal_list[i])
-                    {
-                        mismatch_flag = false;
-                        tmp = tmp->neighbors[e];
-                        break;
-                    }
-                }
-                if (mismatch_flag)
-                {
-                    break;
+                    arrow_room_no = CAVE[arrow_room_no][edge];
+                    room_match_flag = true;
+                    break; // We found a match so we break out of search.
                 }
             }
-            for (; i < ARROW_TRAVERSALS && arrow_traversal_list[i] != 0; ++i)
+            // If a shoot target room didn't match edge room of previous room,
+            // so we shrink the traversal_list by setting the edge room in the list
+            // to INVALID_SHOOT.
+            if (room_match_flag == false)
             {
-                tmp = tmp->neighbors[std::rand() % EDGES];
-                arrow_traversal_list[i] = tmp->room_no;
+                _arrow_traversal_list[width] = INVALID_SHOOT;
+                break; // The search iis concluded due mismatch, so we are at end.
             }
         }
     }
 
-    // Moves the player.
+
+    /// @brief Moves the player.
+    ///
     void process_move()
     {
-        for (int i = 0; i < EDGES; ++i)
+        for (int edge = 0; edge < EDGES; ++edge)
         {
-            if (room_to_move == player_room->neighbors[i]->room_no)
+            // We check whether _room_to_move is valid;
+            if (_room_to_move == CAVE[_player_room_no][edge])
             {
-                player_room = player_room->neighbors[i];
+                _player_room_no = CAVE[_player_room_no][edge];
                 return;
             }
         }
-        os << "Whoops! You just tried to walk through solid rock ;-)\n";
+        _os << "Whoops! You just tried to walk through solid rock ;-)\n";
         return;
     }
 
-    // Handles arrow shooting.
+
+    /// @brief Handles arrow shooting.
+    ///
     void process_shoot()
-    {
-        --arrows;
-
-        bool wumpus_kill {false},             // Flags whether the arrow killed Wumpus.
-             self_kill   {false};               // Flags whether player killed itse
-
-        for( int i = 0; arrow_traversal_list[i] > 0 && i < ARROW_TRAVERSALS; ++i)
+    { 
+        if( _arrows <= 0)
         {
-            if (arrow_traversal_list[i] == player_room->room_no)
+            _os << "You have no arrows in your quiver!\n";
+            return;
+        }
+        --_arrows;
+ 
+        for( int i; _arrow_traversal_list[i] != INVALID_SHOOT &&  i < ARROW_TRAVERSALS; ++i)
+        {
+
+            // player killed itself
+            if (_arrow_traversal_list[i] == _player_room_no)
             {
-                self_kill = true;
-                break;
+                _player_room_no = IS_DEAD;
+                _os << "Your arrow flew in your own room and killed you.\n";
+                return;
             }
-            else if (cave.rooms[arrow_traversal_list[i]-1].content == WUMPUS)
+
+            // player killed the wumpus
+            if (_arrow_traversal_list[i] == _wumpus_room_no)
             {
-                wumpus_kill = true;
-                break;
+                _wumpus_room_no = IS_DEAD;
+                _os << "You killed the wumpus.\n";
+                return;
             }
-
         }
 
-        if (wumpus_kill)
+        // Moving the Wumpus inside the cave to an empty adjacent room.
         {
-            os << "You killed the Wumpus.\n";
-            does_game_run = false;
-        }
-        else if (self_kill)
-        {
-            os << "Your arrow flew in your own room and killed you.\n";
-            does_game_run = false;
-        }
-        else
-        {
-            // Moving the Wumpus inside the cave to an adjacent room.
-            for (int i = 0; i < EDGES; ++i)
+            int random_edge = std::rand() % EDGES;
+            if (CAVE[_wumpus_room_no][random_edge] == EMPTY)
             {
-                int e = std::rand() % EDGES;
-
-                if (wumpus_room->neighbors[e]->content == EMPTY)
+                _wumpus_room_no = CAVE[_wumpus_room_no][random_edge];
+                if (_wumpus_room_no == _player_room_no)
                 {
-                    wumpus_room->content = EMPTY;
-                    wumpus_room = wumpus_room->neighbors[e];
-                    wumpus_room->content = WUMPUS;
-                    break;
+                    _os << "The wumpus walks straight ahead into your room and eats you. *CRUNCH*\n";
+                    _player_room_no = IS_DEAD;
+                    return;
                 }
-            }
-            if (wumpus_room == player_room)
-            {
-                os << "The Wumpus enters the room where you stay.\n";
-                does_game_run = false;
             }
         }
     }
 
+
+    /// @brief Processes the game.
+    ///
     void process_game()
     {
-        if (does_game_run == false)
-            return;
-
-        if (player_commando == Commando::MOVE)
+        if (_player_commando == Commando::MOVE)
+        {
             process_move();
 
-        else if (player_commando == Commando::SHOOT)
+            if( _player_room_no == _wumpus_room_no)
+            {
+                _os << "You walked straight ahead into wumpus' mouth. *CRUNCH*\n";
+                _does_game_run = false;
+            }
+            else if (_rooms_content[_player_room_no] == PIT)
+            {
+                _os << "*AAAHhhhhh... ..you felt into a deep deep hole. For the luck you are\n"
+                       "instantly dead when you shattered on the bottom.\n";
+                _does_game_run = false;
+            }
+            else if( _rooms_content[_player_room_no] == BAT)
+            {
+                _os << "A huge bat grabbed you and fled with you through the cave.\n"
+                     "Somewhere it lets you fall.\n";
+                _rooms_content[_player_room_no] = EMPTY;
+                do {
+                    _player_room_no = std::rand() % CAVE_SIZE;
+                } while (_rooms_content[_player_room_no] != EMPTY || _player_room_no ==_wumpus_room_no);
+                int bat_room_no;
+                do {
+                    bat_room_no = std::rand() % CAVE_SIZE;
+                } while (_rooms_content[bat_room_no] != EMPTY || bat_room_no == _player_room_no || bat_room_no == _wumpus_room_no);
+                _rooms_content[bat_room_no] = BAT;
+            }
+        }
+        else if (_player_commando == Commando::SHOOT)
+        {
             process_shoot();
 
-        // Handling entering a room with the Wumpus inside.
-        if (player_room->content == WUMPUS)
-        {
-            // If the player entered a room with the Wumpus inside.
-            if (player_commando == Commando::MOVE)
+            if (_player_room_no == IS_DEAD || _wumpus_room_no == IS_DEAD)
             {
-
-                os << "You walked straight ahead into the mouth of the Wumpus! *crunch*\n";
-                does_game_run = false;
-                return;
-            }
-            // If the Wumpus entered the room where the player stays.
-            else if (player_commando == Commando::SHOOT)
-            {
-                os << "The Wumpus entered your room and eat you! *crunch*\n";
-                does_game_run = false;
-                return;
-            }
-        }
-        // Handling a pit.
-        else if (player_room->content == PIT)
-        {
-            os << "*AAAHhhhhh... ..you felt into a deep deep hole. For the luck you are\n"
-               << "instantly dead when you shattered on the bottom.\n";
-            does_game_run = false;
-            return;
-        }
-        // Handling entering a room where is a bat:
-        else if (player_room->content == BAT)
-        {
-            player_room->content = EMPTY;
-            while (true)
-            {
-                if (auto const idx{std::rand() % CAVE_SIZE}; cave.rooms[idx].content == EMPTY)
-                {
-                    player_room = &cave.rooms[idx];
-                    os << "A huge bat takes you away and flys with you through the cave.\n";
-                    while (true)
-                    {
-                        if (const auto idx{rand() % CAVE_SIZE}; cave.rooms[idx].content == EMPTY)
-                        {
-                            cave.rooms[idx].content = BAT;
-                            return;
-                        }
-                    }
-                }
+                _does_game_run = false;
             }
         }
     }
 
-    int arrows; // No of arrows inside in the player's quiver.
-    bool does_game_run;
-    std::ostream &os;
-    std::istream &is;
-    Cave cave;
-    Cave::Room *player_room;                          // Here resides the player.
-    Cave::Room *wumpus_room;                          // Here resides the Wumpus.
-    int arrow_traversal_list[ARROW_TRAVERSALS] = {0}; // For the room numbers, the arrow would traverse.
-    int room_to_move;
-    Commando player_commando;
+
+    int _arrows; // No of arrows inside in the player's quiver.
+    bool _does_game_run;
+    std::ostream &_os;
+    std::istream &_is;
+    int _player_room_no;  // Here resides the player.
+    int _wumpus_room_no;  // We must know where the wumpus resides.
+    int _arrow_traversal_list[ARROW_TRAVERSALS] {INVALID_SHOOT}; // For the room numbers, the arrow would traverse.
+    int _room_to_move;
+    Commando _player_commando;
+    Content _rooms_content[CAVE_SIZE] {EMPTY};
+
 
 public:
     Game()
-        : arrows{NO_OF_ARROWS}, does_game_run{true}, os{std::cout}, is{std::cin}, wumpus_room{cave.wumpus_room}, player_commando{Commando::NONE}
+        : _arrows{NO_OF_ARROWS}
+        , _does_game_run{true}
+        , _os{std::cout}
+        , _is{std::cin}
+        , _player_commando{Commando::NONE}
     {
-        // Get randomly an empty room for the player.
+        // populating the cave
+        //
+
+        // Set pits.
+        for (int i = 0; i < NO_OF_PITS;)
+        {
+            if (const auto room_no{std::rand() % CAVE_SIZE}; _rooms_content[room_no] == EMPTY)
+            {
+                _rooms_content[room_no] = PIT;
+                ++i;
+            }
+        }
+        // Set bats.
+        for (int i = 0; i < NO_OF_BATS;)
+        {
+            if (const auto room_no{std::rand() % CAVE_SIZE}; _rooms_content[room_no] == EMPTY)
+            {
+                _rooms_content[room_no] = BAT;
+                ++i;
+            }
+        }
+
+        // Set wumpus.
         while (true)
         {
-            const auto i = std::rand() % CAVE_SIZE;
-            if (cave.rooms[i].content == EMPTY)
+            if (const auto room_no{std::rand() % CAVE_SIZE}; _rooms_content[room_no] == EMPTY)
             {
-                player_room = &cave.rooms[i];
+                _wumpus_room_no = room_no;
+                break;
+            }
+        }
+
+        // Set player.
+        while (true)
+        {
+            if (const auto room_no{std::rand() % CAVE_SIZE}; _rooms_content[room_no] == EMPTY && room_no != _wumpus_room_no)
+            {
+                _player_room_no = room_no;
                 break;
             }
         }
     }
     void run()
     {
-        intro();
-        while (does_game_run)
+        print_intro();
+        while (_does_game_run)
         {
             print_status();
             handle_input();

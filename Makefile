@@ -2,7 +2,7 @@ wumpus:
 	mkdir build && cd build && cmake .. && make
 
 .PHONY:
-	clean
+	clean wumpus
 
 clean:
 	rm -rf ./build
