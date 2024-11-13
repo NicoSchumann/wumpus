@@ -31,26 +31,26 @@ constexpr int EDGES = 3; // Number of edges (doors) of each node (room).
 //
 constexpr int CAVE[CAVE_SIZE][EDGES] =
     {
-        {13, 16, 19},
-        {2, 8, 5},
-        {1, 3, 10},
-        {2, 4, 12},
-        {3, 5, 14},
-        {1, 4, 6},
-        {5, 7, 15},
-        {6, 8, 17},
-        {1, 7, 9},
-        {8, 10, 18},
-        {2, 9, 11},
-        {10, 12, 19},
-        {3, 11, 13},
-        {12, 14, 0},
-        {4, 13, 15},
-        {6, 14, 16},
-        {15, 17, 0},
-        {7, 16, 18},
-        {9, 17, 19},
-        {11, 18, 0}
+        {13, 16, 19},  //  0
+        {2, 8, 5},     //  1
+        {1, 3, 10},    //  2
+        {2, 4, 12},    //  3
+        {3, 5, 14},    //  4
+        {1, 4, 6},     //  5
+        {5, 7, 15},    //  6
+        {6, 8, 17},    //  7
+        {1, 7, 9},     //  8
+        {8, 10, 18},   //  9
+        {2, 9, 11},    // 10
+        {10, 12, 19},  // 11
+        {3, 11, 13},   // 12
+        {12, 14, 0},   // 13
+        {4, 13, 15},   // 14
+        {6, 14, 16},   // 15
+        {15, 17, 0},   // 16
+        {7, 16, 18},   // 17
+        {9, 17, 19},   // 18
+        {11, 18, 0}    // 19
     };
 
 // This content could be inside a room.
@@ -73,8 +73,10 @@ std::ostream &operator<<(std::ostream &os, const Content content)
 
 /// @brief The guts of the game.
 ///
-class Game
+class Game 
 {
+
+    friend std::ostream &operator<<(std::ostream &, const Game & );
 
 private:
 
@@ -85,15 +87,15 @@ private:
         SHOOT
     };
 
-
+    /// @brief Prints helping hin
     void print_help()
     {
-        _os << "\nHint: you need to enter either 'm[ove]', followed by a number\n"
+        _os << "\nYou need to enter either 'm[ove]', followed by a number\n"
               "of the connected rooms, or 's[hoot]', followed by 1 up to 5 room numbers\n"
               "of consecutive connected rooms. If the entered arrow path is faulty,\n"
               "the arrow fly a random path through the cave.\n"
               "Examples:\n"
-              " 'm 4 <Enter>' let you move into room 4 (if possible).\n"
+              " 'm4 <Enter>' let you move into room 4 (if possible).\n"
               " 's 3 8 7 <Enter>' tries to shoot through rooms 3, 8 and 7.\n"
               "h[elp] prints this help\n"
             << std::endl;
@@ -107,7 +109,7 @@ private:
         _os << "\nYou are an adventurer inside a cave. It's pretty dark.\n"
            << "All you have, is your courage and a bow,"
            << " together with " << NO_OF_ARROWS
-           << " arrow" << (NO_OF_ARROWS > 1 ? "s" : "") << " in your quiver."
+           << " arrow" << (NO_OF_ARROWS == 1 ? "" : "s") << " in your quiver."
            << std::endl;
     }
 
@@ -124,24 +126,25 @@ private:
     ///
     void print_status()
     {
-        _os << "There are tunnels, leading to rooms ";
+        _os << "\nThere are tunnels, leading to rooms ";
         for (int i = 0; i < EDGES; ++i)
         {
             _os << (EDGES > 1 && i == EDGES - 1 ? "and " : "")
                << CAVE[_player_room_no][i]
                << (i < EDGES - 2 ? "," : "") 
-               << (i == EDGES - 1 ? "" : " ") 
-               << "\n";
+               << (i == EDGES - 1 ? "" : " ");
+        }
+        _os << ".\n";
 
-            switch (CAVE[_player_room_no][i])
+        for (int i = 0; i < EDGES; ++i)
+        {
+            switch (_rooms_content[CAVE[_player_room_no][i]])
             {
                 case BAT:
-                   _os << "I hear a light rustle in the air.\n"
-                      " Maybe there are bats near.\n";
+                   _os << "I hear a light rustle in the air, maybe there are bats near.\n";
                    continue;
                 case PIT:
-                    _os << "I feel a light cold drought in the air.\n"
-                         " Maybe there is a pit somewhere.\n";
+                    _os << "I feel a light cold drought in the air, maybe there is a pit somewhere.\n";
                     continue;
             }
             if (CAVE[_player_room_no][i] == _wumpus_room_no)
@@ -156,6 +159,9 @@ private:
         }
             
         _os << "\n";
+
+        // debug
+        _os << *this;
     }
 
 
@@ -170,16 +176,15 @@ private:
             std::size_t next_digit_pos {};
             _player_commando = Commando::NONE;
 
-            _os << "Move or shoot (m-s)? ";
-
+         
             if (input_line[0] == 'q')
             {
                 _does_game_run = false;
                 return;
             }
-            if (input_line[0] == 'h' || (input_line[0] != 'm' && input_line[0] != 'm'))
+            if (input_line[0] == 'h' || (input_line[0] != 'm' && input_line[0] != 's'))
             {
-                print_help;
+                print_help();
                 continue;
             }
 
@@ -319,6 +324,17 @@ private:
                 _os << "You killed the wumpus.\n";
                 return;
             }
+            if (_rooms_content[_arrow_traversal_list[i]] == BAT)
+            {
+                _os << "You killed a bat.\n";
+                _rooms_content[_arrow_traversal_list[i]] = EMPTY;
+                return;
+            }
+            if (_rooms_content[_arrow_traversal_list[i]] == PIT)
+            {
+                _os << "*KLONK*  Your arrow felt into a pit.\n";
+                return;
+            }
         }
 
         // Moving the Wumpus inside the cave to an empty adjacent room.
@@ -446,6 +462,10 @@ public:
             }
         }
     }
+
+
+    /// @brief To start game.
+    ///
     void run()
     {
         print_intro();
@@ -459,9 +479,46 @@ public:
     }
 };
 
-int main()
+/// @brief For debugging.
+/// @param os std::ostream&
+/// @param game class Game
+/// @return std::ostream&
+///
+std::ostream &operator<<(std::ostream &os, const Game &game)
 {
-    std::srand(std::time(nullptr));
+    for( auto i = 0; i < CAVE_SIZE; ++i)
+    {
+        os << '{' << i << ':' << game._rooms_content[i] << "} ";
+    }
+    os << "\n wumpus:" << game._wumpus_room_no << ", player:" << game._player_room_no;
+    return os << std::endl;
+}
+
+
+/// @brief Entry function.
+/// @param argc No of invoking arguments, whereby '0' ist the name 
+/// of the program itself.
+/// @param argv A pointer to an argument list.
+/// @return Program exit status, default: EXIT_SUCCESS.
+///
+int main(int argc, char *argv[])
+{
+    int rnd_seed = 1;
+
+    if (argc == 2)
+    {
+        try {
+            rnd_seed = std::stoi(argv[1]);
+        } catch( std::invalid_argument& ) {
+            rnd_seed = 1;
+        }
+
+        std::srand(rnd_seed);
+    }
+    else
+        std::srand(std::time(nullptr));
     
     Game().run();
+
+    return EXIT_SUCCESS;
 }
