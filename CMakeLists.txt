@@ -13,6 +13,6 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Add debugging flags
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -Wall -Wno-reorder")
 
 add_executable(wumpus main.cpp)

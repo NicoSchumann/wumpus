@@ -98,7 +98,6 @@ struct Game
 
         void  move()
         {
-            int new_room_no = -1;
             do
             {
                 int edge = std::rand() % EDGES;
