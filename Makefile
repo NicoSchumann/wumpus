@@ -1,5 +1,11 @@
-wumpus:
-	mkdir build && cd build && cmake .. && make
+all:
+	if [ ! -d ./build ] ; then \
+	mkdir build \
+	&& cd build \
+	&& cmake .. \
+	&& make; \
+	fi
+
 
 .PHONY:
 	clean

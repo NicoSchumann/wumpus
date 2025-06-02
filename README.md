@@ -1,7 +1,5 @@
 # wumpus
-Hunt the Wumpus!
+[Hunt the Wumpus!](https://en.wikipedia.org/wiki/Hunt_the_Wumpus)
 
-My version of the console based adventure game, C++, no external libraries needed.
-
-You can build the project with 'make'.
-The compiled program resides in './build/'
+You can build the project with `make`.
+The compiled program resides in `./build` dir.
