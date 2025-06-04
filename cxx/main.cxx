@@ -328,19 +328,20 @@ struct Game
         os << "\n";
     }
     void print_help() {
-        os << "\nHint: you need to enter either 'm', followed by a number\n"
-              "of the connected rooms, or 's', followed by 1 up to 5 room numbers\n"
-              "of consecutive connected rooms. If the entered arrow path is faulty,\n"
-              "the arrow fly a random path through the cave.\n"
-              "Examples:\n"
-              " 'm 4 <Enter>' let you move into room 4 (if possible).\n"
-              " 's 3 8 7 <Enter>' tries to shoot through rooms 3, 8 and 7.\n\n";
+        os << "\nHint: rooms are numbered from 0 to " << CAVE_SIZE - 1 << ".\n"
+              << "Enter 'm' followed by a room number to move, or 's' followed by 1 up to 5 room numbers\n"
+              << "of consecutive connected rooms. If the entered arrow path is faulty,\n"
+              << "the arrow fly a random path through the cave.\n"
+              << "Examples:\n"
+              << " 'm 4 <Enter>' let you move into room 4 (if possible).\n"
+              << " 's 3 8 7 <Enter>' tries to shoot through rooms 3, 8 and 7.\n\n";
     }
     void intro() {
         os << "\nYou are an adventurer inside a cave. It's pretty dark.\n"
            << "All you have, is your courage and a bow,"
            << " together with " << NO_OF_ARROWS
-           << " arrow" << (NO_OF_ARROWS>1?"s":"") << " in your quiver.";
+           << " arrow" << (NO_OF_ARROWS>1?"s":"") << " in your quiver.\n"
+           << "Rooms are numbered 0 through " << CAVE_SIZE - 1 << ".";
     }
     void bye() {
         os << "\nbye...\n";
