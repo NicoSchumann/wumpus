@@ -269,7 +269,7 @@ void print_status(Game *game) {
 }
 
 void print_help() {
-    printf("\nHint: Enter 'm' followed by a room number to move, or 's' followed by up to 5 room numbers to shoot.\n"
+    printf("\nHint: Enter 'm' followed by a room number to move, or 's' followed by up to 3 room numbers to shoot.\n"
            "Example for move:  m 3 <Enter>\n"
            "Example for shoot: s 1 3 8 <Enter>\n\n");
 }
