@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2024 Nico Schumann <nico.schumann@startmail.com>
+// SPDX-License-Identifier: MIT
+
 // Hunt the Wumpus! ( https://en.wikipedia.org/Hunt_the_Wumpus )
 // My implementation in C++, according to description at wikipedia article.
 // No external libraries needed. Code is public domain.
