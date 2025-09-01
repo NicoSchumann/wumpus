@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Nico Schumann <nico.schumann@startmail.com>
+# SPDX-FileCopyrightText: 2024 NicoSchumann
 # SPDX-License-Identifier: MIT
 
 cmake_minimum_required(VERSION 3.22.1)
