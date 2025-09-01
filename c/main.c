@@ -147,8 +147,10 @@ void process_shoot(Game *game) {
     bool bat_kill = false;
     bool pit_kill = false;
 
-    for (int i = 0; game->player.arrow_traversal_rooms[i] != -1; ++i) {
-        int target_room = game->player.arrow_traversal_rooms[i];
+    printf("The arrow flew through room ");
+
+    for (int idx = 0; game->player.arrow_traversal_rooms[idx] != -1; ++idx) {
+        int target_room = game->player.arrow_traversal_rooms[idx];
         if (target_room < 0 || target_room >= CAVE_SIZE) {
             break;
         }
@@ -162,29 +164,32 @@ void process_shoot(Game *game) {
             }
         }
 
-        printf("The arrow flew through room ");
-        for (int i = 0; game->player.arrow_traversal_rooms[i] != -1; ++i) {
-            printf("%d ", game->player.arrow_traversal_rooms[i]);
-            if (game->player.arrow_traversal_rooms[i] == game->wumpus.room_no) {
-                wumpus_kill = true;
-                break;
-            }
-            else if (game->player.arrow_traversal_rooms[i] == game->player.room_no) {
-                self_kill = true;
-                break;
-            }
-            else if (cave[game->player.arrow_traversal_rooms[i]] == BAT) {
-                bat_kill = true;
-                cave[game->player.arrow_traversal_rooms[i]] = EMPTY;
-                break;
-            }
-            else if (cave[game->player.arrow_traversal_rooms[i]] == PIT) {
-                pit_kill = true;
-                break;
-            }
+        if (!valid_path) {
+            break;
         }
-        printf(".\n");
+
+        printf("%d ", target_room);
+
+        if (target_room == game->wumpus.room_no) {
+            wumpus_kill = true;
+            break;
+        }
+        else if (target_room == game->player.room_no) {
+            self_kill = true;
+            break;
+        }
+        else if (cave[target_room] == BAT) {
+            bat_kill = true;
+            cave[target_room] = EMPTY;
+            break;
+        }
+        else if (cave[target_room] == PIT) {
+            pit_kill = true;
+            break;
+        }
     }
+
+    printf(".\n");
 
     if (bat_kill) {
         printf("*iiik*...\n");
@@ -272,14 +277,18 @@ void print_status(Game *game) {
 }
 
 void print_help() {
-    printf("\nHint: Enter 'm' followed by a room number to move, or 's' followed by up to 3 room numbers to shoot.\n"
+    printf("\nHint: rooms are numbered from 0 to %d.\n"
+           "Enter 'm' followed by a room number to move, or 's' followed by up to 3 room numbers to shoot.\n"
            "Example for move:  m 3 <Enter>\n"
-           "Example for shoot: s 1 3 8 <Enter>\n\n");
+           "Example for shoot: s 1 3 8 <Enter>\n\n",
+           CAVE_SIZE - 1);
 }
 
 void intro() {
     printf("\nYou are an adventurer inside a cave. It's pretty dark.\n");
-    printf("All you have is your courage and a bow, together with %d arrow%s in your quiver.\n", NO_OF_ARROWS, NO_OF_ARROWS > 1 ? "s" : "");
+    printf("All you have is your courage and a bow, together with %d arrow%s in your quiver.\n",
+           NO_OF_ARROWS, NO_OF_ARROWS > 1 ? "s" : "");
+    printf("Rooms are numbered 0 through %d.\n", CAVE_SIZE - 1);
 }
 
 void bye() {
