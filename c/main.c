@@ -144,8 +144,10 @@ void process_shoot(Game *game) {
     bool bat_kill = false;
     bool pit_kill = false;
 
-    for (int i = 0; game->player.arrow_traversal_rooms[i] != -1; ++i) {
-        int target_room = game->player.arrow_traversal_rooms[i];
+    printf("The arrow flew through room ");
+
+    for (int idx = 0; game->player.arrow_traversal_rooms[idx] != -1; ++idx) {
+        int target_room = game->player.arrow_traversal_rooms[idx];
         if (target_room < 0 || target_room >= CAVE_SIZE) {
             break;
         }
@@ -159,29 +161,32 @@ void process_shoot(Game *game) {
             }
         }
 
-        printf("The arrow flew through room ");
-        for (int i = 0; game->player.arrow_traversal_rooms[i] != -1; ++i) {
-            printf("%d ", game->player.arrow_traversal_rooms[i]);
-            if (game->player.arrow_traversal_rooms[i] == game->wumpus.room_no) {
-                wumpus_kill = true;
-                break;
-            }
-            else if (game->player.arrow_traversal_rooms[i] == game->player.room_no) {
-                self_kill = true;
-                break;
-            }
-            else if (cave[game->player.arrow_traversal_rooms[i]] == BAT) {
-                bat_kill = true;
-                cave[game->player.arrow_traversal_rooms[i]] = EMPTY;
-                break;
-            }
-            else if (cave[game->player.arrow_traversal_rooms[i]] == PIT) {
-                pit_kill = true;
-                break;
-            }
+        if (!valid_path) {
+            break;
         }
-        printf(".\n");
+
+        printf("%d ", target_room);
+
+        if (target_room == game->wumpus.room_no) {
+            wumpus_kill = true;
+            break;
+        }
+        else if (target_room == game->player.room_no) {
+            self_kill = true;
+            break;
+        }
+        else if (cave[target_room] == BAT) {
+            bat_kill = true;
+            cave[target_room] = EMPTY;
+            break;
+        }
+        else if (cave[target_room] == PIT) {
+            pit_kill = true;
+            break;
+        }
     }
+
+    printf(".\n");
 
     if (bat_kill) {
         printf("*iiik*...\n");
