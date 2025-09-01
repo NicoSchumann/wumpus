@@ -274,14 +274,18 @@ void print_status(Game *game) {
 }
 
 void print_help() {
-    printf("\nHint: Enter 'm' followed by a room number to move, or 's' followed by up to 3 room numbers to shoot.\n"
+    printf("\nHint: rooms are numbered from 0 to %d.\n"
+           "Enter 'm' followed by a room number to move, or 's' followed by up to 3 room numbers to shoot.\n"
            "Example for move:  m 3 <Enter>\n"
-           "Example for shoot: s 1 3 8 <Enter>\n\n");
+           "Example for shoot: s 1 3 8 <Enter>\n\n",
+           CAVE_SIZE - 1);
 }
 
 void intro() {
     printf("\nYou are an adventurer inside a cave. It's pretty dark.\n");
-    printf("All you have is your courage and a bow, together with %d arrow%s in your quiver.\n", NO_OF_ARROWS, NO_OF_ARROWS > 1 ? "s" : "");
+    printf("All you have is your courage and a bow, together with %d arrow%s in your quiver.\n",
+           NO_OF_ARROWS, NO_OF_ARROWS > 1 ? "s" : "");
+    printf("Rooms are numbered 0 through %d.\n", CAVE_SIZE - 1);
 }
 
 void bye() {
