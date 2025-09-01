@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 NicoSchumann
+# SPDX-License-Identifier: MIT
+
 cmake_minimum_required(VERSION 3.22.1)
 
 set(CXX_STANDARD 17)

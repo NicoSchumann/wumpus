@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2024 Nico Schumann <nico.schumann@startmail.com>
+# SPDX-License-Identifier: MIT
+
 wumpus:
 	mkdir build && cd build && cmake .. && make
 
@@ -6,3 +9,4 @@ wumpus:
 
 clean:
 	rm -rf ./build
+
