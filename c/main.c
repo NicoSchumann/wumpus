@@ -15,6 +15,7 @@
 #define ARROW_TRAVERSALS 3  // Number of rooms which may be traversed by an arrow.
 
 // Graphical correlation of edges of each room of the cave.
+// At this configuration, it's a Dodecaedrone.
 const int CONNECTIONS[CAVE_SIZE][EDGES] = {
     {13, 16, 19}, {2, 8, 5}, {1, 3, 10}, {2, 4, 12}, {3, 5, 14},
     {1, 4, 6}, {5, 7, 15}, {6, 8, 17}, {1, 7, 9}, {8, 10, 18},
